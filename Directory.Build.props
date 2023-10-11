@@ -1,3 +1,5 @@
 <Project>
-  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+	<PropertyGroup>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
 </Project>
