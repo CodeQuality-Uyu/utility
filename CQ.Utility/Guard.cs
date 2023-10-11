@@ -14,7 +14,7 @@ namespace CQ.Utility
         {
             if (value is null)
             {
-                throw new ArgumentNullException(propName);
+                throw new ArgumentNullException(propName, $"Parameter '{propName}' cannot be null");
             }
         }
 
@@ -28,7 +28,7 @@ namespace CQ.Utility
         {
             if (string.IsNullOrWhiteSpace(value))
             {
-                throw new ArgumentNullException(propName);
+                throw new ArgumentNullException(propName, $"Parameter '{propName}' cannot be null or empty");
             }
         }
 
@@ -43,7 +43,22 @@ namespace CQ.Utility
         {
             if (value.Length < length) 
             {
-                throw new ArgumentException($"{propName} must have minimum {length} characters.");
+                throw new ArgumentException($"Parameter '{propName}' must have minimum {length} characters");
+            }
+        }
+
+        /// <summary>
+        /// Checks if string has max length
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="length"></param>
+        /// <param name="propName"></param>
+        /// <exception cref="ArgumentException"></exception>
+        public static void TheowMaximumLength(string value, int length, string propName)
+        {
+            if (value.Length > length)
+            {
+                throw new ArgumentException($"Parameter '{propName}' must have maximum {length} characters");
             }
         }
 
