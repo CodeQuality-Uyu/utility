@@ -40,6 +40,11 @@ namespace CQ.Utility
                 return true;
             }
 
+            if(id.Length < 24)
+            {
+                return false;
+            }
+
             isIdValid = Guid.TryParse((id.Insert(8, "-").Insert(13, "-").Insert(18, "-").Insert(21, "-").Insert(23, "-")), out Guid guidFormattedId);
             
             return isIdValid;
