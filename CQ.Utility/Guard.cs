@@ -63,7 +63,7 @@ namespace CQ.Utility
         }
 
         /// <summary>
-        /// Replace '<script>, </script>' tags and '<, </>' tags with empty string
+        /// Replace '<script>, </script>' tags and '<>, </>' tags with empty string
         /// </summary>
         /// <param name="value"></param>
         /// <exception cref="NullReferenceException">If value is null</exception>
@@ -71,7 +71,7 @@ namespace CQ.Utility
         public static string Encode(string value)
         {
             var withoutScript = value.Replace("<script>", "").Replace("</script>","");
-            var withoutJs = withoutScript.Replace("<", "").Replace("</>","");
+            var withoutJs = withoutScript.Replace("<>", "").Replace("</>","");
 
             return withoutJs;
         }
