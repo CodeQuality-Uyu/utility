@@ -12,9 +12,9 @@ namespace CQ.Utility
         /// <exception cref="ArgumentNullException"> When value is null</exception>
         public static void ThrowIsNull(object? value, string propName)
         {
-            if (value is null)
+            if (value == null)
             {
-                throw new ArgumentNullException(propName, $"Parameter '{propName}' cannot be null");
+                throw new ArgumentNullException(propName, "Value of parameter cannot be null");
             }
         }
 
@@ -28,7 +28,7 @@ namespace CQ.Utility
         {
             if (string.IsNullOrWhiteSpace(value))
             {
-                throw new ArgumentNullException(propName, $"Parameter '{propName}' cannot be null or empty");
+                throw new ArgumentNullException(propName, $"Value of parameter cannot be null or empty");
             }
         }
 
@@ -54,7 +54,7 @@ namespace CQ.Utility
         /// <param name="length"></param>
         /// <param name="propName"></param>
         /// <exception cref="ArgumentException"></exception>
-        public static void TheowMaximumLength(string value, int length, string propName)
+        public static void ThrowMaximumLength(string value, int length, string propName)
         {
             if (value.Length > length)
             {
