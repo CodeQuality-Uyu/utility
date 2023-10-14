@@ -19,6 +19,36 @@ namespace CQ.Utility
         }
 
         /// <summary>
+        /// Checks if value is null
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="propName"></param>
+        /// <exception cref="TException"> When value is null</exception>
+        public static void ThrowIsNull<TException>(object? value)
+            where TException : Exception, new()
+        {
+            if (value == null)
+            {
+                throw new TException();
+            }
+        }
+
+        /// <summary>
+        /// Checks if value is null
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="propName"></param>
+        /// <exception cref="TException"> When value is null</exception>
+        public static void ThrowIsNull<TException>(object? value, params object?[] args)
+            where TException : Exception, new()
+        {
+            if (value == null)
+            {
+                throw (TException)Activator.CreateInstance(typeof(TException), args);
+            }
+        }
+
+        /// <summary>
         /// Checks if string is null or white space
         /// </summary>
         /// <param name="value"></param>
