@@ -54,7 +54,7 @@ namespace CQ.Utility.Tests
         {
             try
             {
-                Guard.ThrowMinimumLength("1234", 10, "prop");
+                Guard.ThrowIsLessThan("1234", 10, "prop");
             }
             catch (Exception ex)
             {
