@@ -22,7 +22,7 @@ namespace CQ.Utility
         /// </summary>
         /// <param name="id"></param>
         /// <exception cref="ArgumentException"></exception>
-        public static void ThrowIdHasNotValidFormat(string id)
+        public static void ThrowIsInvalidId(string id)
         {
             var isIdInvalid = !IsIdValid(id);
             if (isIdInvalid)
@@ -31,7 +31,12 @@ namespace CQ.Utility
             }
         }
 
-        private static bool IsIdValid(string id)
+        /// <summary>
+        /// Checks if id is valid
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static bool IsIdValid(string id)
         {
             var isIdValid = Guid.TryParse(id, out Guid guidId);
 
@@ -56,7 +61,7 @@ namespace CQ.Utility
         /// <typeparam name="TException"></typeparam>
         /// <param name="id"></param>
         /// <exception cref="TException"></exception>
-        public static void ThrowIdHasNotValidFormat<TException>(string id)
+        public static void ThrowIsInvalidId<TException>(string id)
             where TException : Exception, new()
         {
             var isIdInvalid = !IsIdValid(id);

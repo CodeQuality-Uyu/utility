@@ -26,10 +26,20 @@ namespace CQ.Utility
         /// <exception cref="ArgumentNullException"></exception>
         public static void ThrowIsNullOrEmpty(string? value, string propName)
         {
-            if (string.IsNullOrWhiteSpace(value))
+            if (IsNullOrEmpty(value))
             {
                 throw new ArgumentNullException(propName, $"Value of parameter cannot be null or empty");
             }
+        }
+
+        /// <summary>
+        /// Checks if string is null or white space
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static bool IsNullOrEmpty(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value);
         }
 
         /// <summary>
@@ -39,9 +49,9 @@ namespace CQ.Utility
         /// <param name="length"></param>
         /// <param name="propName"></param>
         /// <exception cref="ArgumentException"></exception>
-        public static void ThrowMinimumLength(string value, int length, string propName)
+        public static void ThrowIsLessThan(string value, int length, string propName)
         {
-            if (value.Length < length) 
+            if (value.Length < length)
             {
                 throw new ArgumentException($"Parameter '{propName}' must have minimum {length} characters");
             }
@@ -54,7 +64,7 @@ namespace CQ.Utility
         /// <param name="length"></param>
         /// <param name="propName"></param>
         /// <exception cref="ArgumentException"></exception>
-        public static void ThrowMaximumLength(string value, int length, string propName)
+        public static void ThrowIsMoreThan(string value, int length, string propName)
         {
             if (value.Length > length)
             {
@@ -63,17 +73,18 @@ namespace CQ.Utility
         }
 
         /// <summary>
-        /// Replace '<script>, </script>' tags and '<>, </>' tags with empty string
+        /// Replace '<script>, </script>', '<>, </>', '<, >' tags with empty string
         /// </summary>
         /// <param name="value"></param>
         /// <exception cref="NullReferenceException">If value is null</exception>
         /// <returns>String without the tags</returns>
         public static string Encode(string value)
         {
-            var withoutScript = value.Replace("<script>", "").Replace("</script>","");
-            var withoutJs = withoutScript.Replace("<>", "").Replace("</>","");
+            var withoutScript = value.Replace("<script>", string.Empty).Replace("</script>", string.Empty);
+            var withoutJs = withoutScript.Replace("<>", string.Empty).Replace("</>", string.Empty);
+            var withoutTags = withoutJs.Replace("<", string.Empty).Replace(">", string.Empty);
 
-            return withoutJs;
+            return withoutTags;
         }
 
         /// <summary>
@@ -81,7 +92,7 @@ namespace CQ.Utility
         /// </summary>
         /// <param name="email"></param>
         /// <exception cref="ArgumentException"></exception>
-        public static void ThrowEmailFormat(string email)
+        public static void ThrowIsInvalidEmailFormat(string email)
         {
             string emailPattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
 
@@ -93,17 +104,68 @@ namespace CQ.Utility
         }
 
         /// <summary>
+        /// Checks if input is not null or empty and has a email format
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="propName"></param>
+        /// <exception cref="ArgumentNullException"></exception>"
+        /// <exception cref="ArgumentException"></exception>"
+        public static void ThrowIsInputInvalidEmail(string input, string propName = "email")
+        {
+            ThrowIsNullOrEmpty(input, propName);
+
+            ThrowIsInvalidEmailFormat(input);
+        }
+
+        /// <summary>
         /// Checks that the password has at least on special character and number
         /// </summary>
         /// <param name="password"></param>
         /// <exception cref="ArgumentException"></exception>
-        public static void ThrowPasswordFormat(string password)
+        public static void ThrowIsInvalidPasswordFormat(string password)
         {
             string specialCharacterPattern = @"[!@#$%^&*(),.?""\:{ }|<>]";
             string numberPattern = @"\d";
             if (!Regex.IsMatch(password, specialCharacterPattern) || !Regex.IsMatch(password, numberPattern))
             {
                 throw new ArgumentException("Password must have at least one number and special character");
+            }
+        }
+
+        /// <summary>
+        /// Checks if input is a valid input and has a valid password format with special characters and number
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="propName"></param>
+        /// <param name="minLength"></param>
+        /// <param name="maxLength"></param>
+        /// <exception cref="ArgumentNullException"></exception>"
+        /// <exception cref="ArgumentException"></exception>"
+        public static void ThrowIsInputInvalidPassword(string input, string propName = "password", int minLength = 8, int? maxLength = null)
+        {
+            ThrowIsInputInvalid(input, propName, minLength, maxLength);
+
+            ThrowIsInvalidPasswordFormat(input);
+        }
+
+        /// <summary>
+        /// Checks if the input is not null or empty and if it's between the lengths allowed in cased their are provided
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="propName"></param>
+        /// <param name="minLength"></param>
+        /// <param name="maxLength"></param>
+        /// <exception cref="ArgumentNullException"></exception>"
+        /// <exception cref="ArgumentException"></exception>"
+        public static void ThrowIsInputInvalid(string input, string propName, int minLength = 0, int? maxLength = null)
+        {
+            ThrowIsNullOrEmpty(input, propName);
+
+            ThrowIsLessThan(input, minLength, propName);
+
+            if (maxLength.HasValue)
+            {
+                ThrowIsMoreThan(input, maxLength.Value, propName);
             }
         }
     }
