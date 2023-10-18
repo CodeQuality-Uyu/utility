@@ -1,9 +1,11 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace CQ.Utility
@@ -87,7 +89,16 @@ namespace CQ.Utility
         private async Task<TBody> ProcessBodyAsync<TBody>(HttpResponseMessage response)
             where TBody : class
         {
-            return await response.Content.ReadFromJsonAsync<TBody>().ConfigureAwait(false);
+            try
+            {
+                return await response.Content.ReadFromJsonAsync<TBody>().ConfigureAwait(false);
+            }
+            catch { 
+            
+                var responseAsString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                return JsonConvert.DeserializeObject<TBody>(responseAsString);
+            }
         }
     }
 }
