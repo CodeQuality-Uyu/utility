@@ -35,6 +35,15 @@ namespace CQ.Utility
             }
         }
 
+        public void AddDefaultHeaders(IList<(string name, string value)> headers)
+        {
+            foreach(var header in headers)
+            {
+                _httpClient.DefaultRequestHeaders.Remove(header.name);
+                _httpClient.DefaultRequestHeaders.Add(header.name, header.value);
+            }
+        }
+
         /// <summary>
         /// Execute post request and parse success body to TSuccessBody and error body to TErrorBody.
         /// </summary>
@@ -57,10 +66,7 @@ namespace CQ.Utility
 
             if (headers != null)
             {
-                foreach (var header in headers)
-                {
-                    _httpClient.DefaultRequestHeaders.Add(header.name, header.value);
-                }
+                AddDefaultHeaders(headers);
             }
 
             var response = await _httpClient.PostAsJsonAsync(uri, value).ConfigureAwait(false);
@@ -93,12 +99,39 @@ namespace CQ.Utility
             {
                 return await response.Content.ReadFromJsonAsync<TBody>().ConfigureAwait(false);
             }
-            catch { 
-            
+            catch
+            {
+
                 var responseAsString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 return JsonConvert.DeserializeObject<TBody>(responseAsString);
             }
+        }
+
+        /// <summary>
+        /// Execute get request and parse success body to TSuccessBody and error body to TErrorBody.
+        /// </summary>
+        /// <typeparam name="TSuccessBody"></typeparam>
+        /// <typeparam name="TErrorBody"></typeparam>
+        /// <param name="uri"></param>
+        /// <param name="processError"></param>
+        /// <param name="headers"></param>
+        /// <returns></returns>
+        public virtual async Task<TSuccessBody> GetAsync<TSuccessBody, TErrorBody>(
+            string uri, 
+            Action<TErrorBody>? processError = null,
+            IList<(string name, string value)>? headers = null)
+            where TSuccessBody: class
+            where TErrorBody : class
+        {
+            if (headers != null)
+            {
+                AddDefaultHeaders(headers);
+            }
+
+            var response = await _httpClient.GetAsync(uri).ConfigureAwait(false);
+
+            return await ProcessResponseAsync<TSuccessBody, TErrorBody>(response, processError).ConfigureAwait(false);
         }
     }
 }
