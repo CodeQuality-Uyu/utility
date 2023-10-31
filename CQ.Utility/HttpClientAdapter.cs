@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace CQ.Utility
@@ -14,12 +15,14 @@ namespace CQ.Utility
     {
         private readonly HttpClient _httpClient;
 
+        private delegate Task<HttpResponseMessage> RequestAsync(string uri);
+
         public HttpClientAdapter()
         {
             _httpClient = new();
         }
 
-        public HttpClientAdapter(string baseUrl, IList<(string name, string value)>? baseHeaders = null)
+        public HttpClientAdapter(string baseUrl, IList<Header>? baseHeaders = null)
         {
             _httpClient = new()
             {
@@ -30,17 +33,34 @@ namespace CQ.Utility
             {
                 foreach (var baseHeader in baseHeaders)
                 {
-                    _httpClient.DefaultRequestHeaders.Add(baseHeader.name, baseHeader.value);
+                    _httpClient.DefaultRequestHeaders.Add(baseHeader.Name, baseHeader.Value);
                 }
             }
         }
 
-        public void AddDefaultHeaders(IList<(string name, string value)> headers)
+        /// <summary>
+        /// Adds the header to the httpClient as default. Befor of adding them, they are removed.
+        /// </summary>
+        /// <param name="headers"></param>
+        public void AddDefaultHeaders(IList<Header> headers)
         {
-            foreach(var header in headers)
+            foreach (var header in headers)
             {
-                _httpClient.DefaultRequestHeaders.Remove(header.name);
-                _httpClient.DefaultRequestHeaders.Add(header.name, header.value);
+                _httpClient.DefaultRequestHeaders.Remove(header.Name);
+                _httpClient.DefaultRequestHeaders.Add(header.Name, header.Value);
+            }
+        }
+
+
+        /// <summary>
+        /// Removes the header from the httpClient.
+        /// </summary>
+        /// <param name="headers"></param>
+        public void RemoveDefaultHeaders(IList<Header> headers)
+        {
+            foreach (var header in headers)
+            {
+                _httpClient.DefaultRequestHeaders.Remove(header.Name);
             }
         }
 
@@ -58,33 +78,48 @@ namespace CQ.Utility
         public virtual async Task<TSuccessBody> PostAsync<TSuccessBody, TErrorBody>(
             string uri,
             object value,
-            Action<TErrorBody>? processError = null,
-            IList<(string name, string value)>? headers = null)
+            Func<TErrorBody, Exception?>? processError = null,
+            IList<Header>? headers = null)
             where TSuccessBody : class
             where TErrorBody : class
         {
-
-            if (headers != null)
+            var post = async (string uri) =>
             {
-                AddDefaultHeaders(headers);
-            }
+                var response = await _httpClient.PostAsJsonAsync(uri, value).ConfigureAwait(false);
 
-            var response = await _httpClient.PostAsJsonAsync(uri, value).ConfigureAwait(false);
+                return response;
+            };
 
-            return await ProcessResponseAsync<TSuccessBody, TErrorBody>(response, processError).ConfigureAwait(false);
+            var request = new RequestAsync(post);
+
+            return await ExecuteRequest<TSuccessBody, TErrorBody>(uri, request, processError, headers).ConfigureAwait(false);
         }
 
-        private async Task<TSuccessBody> ProcessResponseAsync<TSuccessBody, TErrorBody>(HttpResponseMessage response, Action<TErrorBody>? processErrorResponse = null)
+        private async Task<TSuccessBody> ProcessResponseAsync<TSuccessBody, TErrorBody>(
+            HttpResponseMessage response,
+            Func<TErrorBody, Exception?>? processErrorResponse = null)
             where TSuccessBody : class
             where TErrorBody : class
         {
             if (!response.IsSuccessStatusCode)
             {
-                var errorBody = await this.ProcessBodyAsync<TErrorBody>(response).ConfigureAwait(false);
+                var errorBody = await this.ProcessBodyAsync<object>(response).ConfigureAwait(false);
 
-                processErrorResponse?.Invoke(errorBody);
+                var concreteError = errorBody as TErrorBody;
 
-                throw new RequestException<TErrorBody>(errorBody);
+                if (concreteError == null || processErrorResponse == null)
+                {
+                    throw new RequestException<object>(errorBody);
+                }
+
+                var exception = processErrorResponse(concreteError);
+
+                if (exception != null)
+                {
+                    throw exception;
+                }
+
+                throw new RequestException<TErrorBody>(concreteError);
             }
 
             var successBody = await this.ProcessBodyAsync<TSuccessBody>(response).ConfigureAwait(false);
@@ -118,20 +153,60 @@ namespace CQ.Utility
         /// <param name="headers"></param>
         /// <returns></returns>
         public virtual async Task<TSuccessBody> GetAsync<TSuccessBody, TErrorBody>(
-            string uri, 
-            Action<TErrorBody>? processError = null,
-            IList<(string name, string value)>? headers = null)
-            where TSuccessBody: class
+            string uri,
+            Func<TErrorBody, Exception?>? processError = null,
+            IList<Header>? headers = null)
+            where TSuccessBody : class
             where TErrorBody : class
         {
-            if (headers != null)
+            return await ExecuteRequest<TSuccessBody, TErrorBody>(uri, _httpClient.GetAsync, processError, headers).ConfigureAwait(false);
+        }
+
+        private async Task<TSuccessBody> ExecuteRequest<TSuccessBody, TErrorBody>(
+            string uri,
+            RequestAsync Request,
+            Func<TErrorBody, Exception?>? processError = null,
+            IList<Header>? headers = null)
+            where TSuccessBody : class
+            where TErrorBody : class
+        {
+            try
             {
-                AddDefaultHeaders(headers);
+
+                if (headers != null)
+                {
+                    AddDefaultHeaders(headers);
+                }
+
+                var response = await Request(uri).ConfigureAwait(false);
+
+                if (headers != null)
+                {
+                    RemoveDefaultHeaders(headers);
+                }
+
+                return await ProcessResponseAsync<TSuccessBody, TErrorBody>(response, processError).ConfigureAwait(false);
             }
+            catch (HttpRequestException ex) 
+            {
+                if (ex.Message.ToLower().StartsWith("no connection could be made"))
+                {
+                    Match match = Regex.Match(ex.Message, @"\((.*?)\)");
 
-            var response = await _httpClient.GetAsync(uri).ConfigureAwait(false);
+                    string connection;
+                    if (match.Success)
+                    {
+                        connection = match.Groups[1].Value;
+                    }
+                    else
+                    {
+                        connection = "-";
+                    }
 
-            return await ProcessResponseAsync<TSuccessBody, TErrorBody>(response, processError).ConfigureAwait(false);
+                    throw new ConnectionRefusedException(connection);
+                }
+                throw;
+            }
         }
     }
 }

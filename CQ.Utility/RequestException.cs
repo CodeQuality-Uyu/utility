@@ -8,7 +8,7 @@ namespace CQ.Utility
 {
     public class RequestException<TError> : Exception where TError : class
     {
-        public TError ErrorBody { get; }
+        public readonly TError ErrorBody;
 
         public RequestException(TError errorBody)
         {
