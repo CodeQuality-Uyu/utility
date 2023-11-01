@@ -49,6 +49,16 @@ namespace CQ.Utility
         }
 
         /// <summary>
+        /// Checks if objects is null
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static bool IsNull(object? value)
+        {
+            return value == null;
+        }
+
+        /// <summary>
         /// Checks if string is null or white space
         /// </summary>
         /// <param name="value"></param>
