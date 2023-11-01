@@ -73,6 +73,16 @@ namespace CQ.Utility
         }
 
         /// <summary>
+        /// Checks if string is not null or white space
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static bool IsNotNullOrEmpty(string? value) 
+        {
+            return !string.IsNullOrWhiteSpace(value);
+        }
+
+        /// <summary>
         /// Checks if string has minimum length
         /// </summary>
         /// <param name="value"></param>
@@ -88,6 +98,21 @@ namespace CQ.Utility
         }
 
         /// <summary>
+        /// Checks if int is less than max
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="max"></param>
+        /// <param name="propName"></param>
+        /// <exception cref="ArgumentException"></exception>
+        public static void ThrowIsLessThan(int value, int max, string propName)
+        {
+            if(value < max)
+            {
+                throw new ArgumentException($"Parameter '{propName}' must be grater than {max}");
+            }
+        }
+
+        /// <summary>
         /// Checks if string has max length
         /// </summary>
         /// <param name="value"></param>
@@ -99,6 +124,21 @@ namespace CQ.Utility
             if (value.Length > length)
             {
                 throw new ArgumentException($"Parameter '{propName}' must have maximum {length} characters");
+            }
+        }
+
+        /// <summary>
+        /// Checks if int is more than max
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="max"></param>
+        /// <param name="propName"></param>
+        /// <exception cref="ArgumentException"></exception>
+        public static void ThrowIsMoreThan(int value, int max, string propName)
+        {
+            if(value > max)
+            {
+                throw new ArgumentException($"Parameter '{propName}' must be less than {max}");
             }
         }
 
