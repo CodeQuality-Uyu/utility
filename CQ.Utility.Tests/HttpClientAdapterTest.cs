@@ -19,7 +19,7 @@ namespace CQ.Utility.Tests
             firebaseApi = new HttpClientAdapter(
                 "https://identitytoolkit.googleapis.com",
                 new List<Header> { new("Referer", "localhost:7049") });
-            authProviderApi = new HttpClientAdapter("http://localhost:7049");
+            authProviderApi = new HttpClientAdapter("https://localhost:7049");
         }
 
         #region Firebase api
@@ -53,6 +53,20 @@ namespace CQ.Utility.Tests
 
             Assert.IsNotNull(response);
             Assert.IsTrue(response.Alive);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(RequestException<AuthProviderErrorBody>))]
+        public async Task GivenApiUp_WhenExecuteMeRequest_ThenThrowException()
+        {
+            var response = await authProviderApi.GetAsync<AuthProviderHealthSuccessBody, AuthProviderErrorBody>("me").ConfigureAwait(false);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public async Task GivenApiUp_WhenOverrideProcessError_ThenThrowCustomException()
+        {
+            var response = await authProviderApi.GetAsync<AuthProviderHealthSuccessBody, AuthProviderErrorBody>("me", (error) => new InvalidOperationException()).ConfigureAwait(false);
         }
         #endregion
     }
