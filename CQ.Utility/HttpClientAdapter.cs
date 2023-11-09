@@ -103,23 +103,24 @@ namespace CQ.Utility
         {
             if (!response.IsSuccessStatusCode)
             {
-                var errorBody = await this.ProcessBodyAsync<object>(response).ConfigureAwait(false);
+                var concreteErrorBody = await this.ProcessBodyAsync<TErrorBody>(response).ConfigureAwait(false);
 
-                var concreteError = errorBody as TErrorBody;
-
-                if (concreteError == null || processErrorResponse == null)
+                if(concreteErrorBody == null)
                 {
+                    var errorBody = await this.ProcessBodyAsync<object>(response).ConfigureAwait(false);
+
                     throw new RequestException<object>(errorBody);
                 }
 
-                var exception = processErrorResponse(concreteError);
-
-                if (exception != null)
+                Exception? exception = null;
+                if(processErrorResponse != null)
                 {
-                    throw exception;
+                    exception = processErrorResponse(concreteErrorBody);
                 }
 
-                throw new RequestException<TErrorBody>(concreteError);
+                exception ??= new RequestException<TErrorBody>(concreteErrorBody);
+
+                throw exception;
             }
 
             var successBody = await this.ProcessBodyAsync<TSuccessBody>(response).ConfigureAwait(false);
@@ -187,7 +188,7 @@ namespace CQ.Utility
 
                 return await ProcessResponseAsync<TSuccessBody, TErrorBody>(response, processError).ConfigureAwait(false);
             }
-            catch (HttpRequestException ex) 
+            catch (HttpRequestException ex)
             {
                 if (ex.Message.ToLower().StartsWith("no connection could be made"))
                 {
