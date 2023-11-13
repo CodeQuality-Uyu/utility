@@ -38,6 +38,13 @@ namespace CQ.Utility
             }
         }
 
+        public HttpClientAdapter(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
+        }
+
+
+
         /// <summary>
         /// Adds the header to the httpClient as default. Befor of adding them, they are removed.
         /// </summary>
