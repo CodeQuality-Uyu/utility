@@ -59,6 +59,16 @@ namespace CQ.Utility
         }
 
         /// <summary>
+        /// Checks if objects is not null
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static bool IsNotNull(object? value)
+        {
+            return value != null;
+        }
+
+        /// <summary>
         /// Checks if string is null or white space
         /// </summary>
         /// <param name="value"></param>
@@ -158,8 +168,12 @@ namespace CQ.Utility
         /// <param name="value"></param>
         /// <exception cref="NullReferenceException">If value is null</exception>
         /// <returns>String without the tags</returns>
-        public static string Encode(string value)
+        public static string? Encode(string? value)
         {
+            if (value == null) return null;
+
+            value = value.Trim();
+
             var withoutScript = value.Replace("<script>", string.Empty).Replace("</script>", string.Empty);
             var withoutJs = withoutScript.Replace("<>", string.Empty).Replace("</>", string.Empty);
             var withoutTags = withoutJs.Replace("<", string.Empty).Replace(">", string.Empty);
