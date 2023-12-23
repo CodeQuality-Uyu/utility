@@ -113,7 +113,7 @@ namespace CQ.Utility
         {
             if (value.Length < length)
             {
-                throw new ArgumentException($"Parameter '{propName}' must have minimum {length} characters");
+                throw new ArgumentException($"Must have minimum {length} characters", propName);
             }
         }
 
@@ -128,7 +128,7 @@ namespace CQ.Utility
         {
             if(value < max)
             {
-                throw new ArgumentException($"Parameter '{propName}' must be grater than {max}");
+                throw new ArgumentException($"Must be grater than {max}", propName);
             }
         }
 
@@ -143,7 +143,7 @@ namespace CQ.Utility
         {
             if (value.Length > length)
             {
-                throw new ArgumentException($"Parameter '{propName}' must have maximum {length} characters");
+                throw new ArgumentException($"Must have maximum {length} characters", propName);
             }
         }
 
@@ -158,7 +158,7 @@ namespace CQ.Utility
         {
             if(value > max)
             {
-                throw new ArgumentException($"Parameter '{propName}' must be less than {max}");
+                throw new ArgumentException($"Must be less than {max}", propName);
             }
         }
 
@@ -193,7 +193,7 @@ namespace CQ.Utility
             // Check if the email matches the pattern
             if (!Regex.IsMatch(email, emailPattern))
             {
-                throw new ArgumentException("Incorrect format of email");
+                throw new ArgumentException("Incorrect format", nameof(email));
             }
         }
 
@@ -222,7 +222,7 @@ namespace CQ.Utility
             string numberPattern = @"\d";
             if (!Regex.IsMatch(password, specialCharacterPattern) || !Regex.IsMatch(password, numberPattern))
             {
-                throw new ArgumentException("Password must have at least one number and special character");
+                throw new ArgumentException("Must have at least one number and special character", nameof(password));
             }
         }
 

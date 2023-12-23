@@ -22,12 +22,12 @@ namespace CQ.Utility
         /// </summary>
         /// <param name="id"></param>
         /// <exception cref="ArgumentException"></exception>
-        public static void ThrowIsInvalidId(string id)
+        public static void ThrowIsInvalidId(string id, string propId)
         {
             var isIdInvalid = !IsIdValid(id);
             if (isIdInvalid)
             {
-                throw new ArgumentException("The id is invalid");
+                throw new ArgumentException("The id is invalid", propId);
             }
         }
 
