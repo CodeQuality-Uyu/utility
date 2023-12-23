@@ -59,6 +59,16 @@ namespace CQ.Utility
         }
 
         /// <summary>
+        /// Checks if objects is not null
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static bool IsNotNull(object? value)
+        {
+            return value != null;
+        }
+
+        /// <summary>
         /// Checks if string is null or white space
         /// </summary>
         /// <param name="value"></param>
@@ -103,7 +113,7 @@ namespace CQ.Utility
         {
             if (value.Length < length)
             {
-                throw new ArgumentException($"Parameter '{propName}' must have minimum {length} characters");
+                throw new ArgumentException($"Must have minimum {length} characters", propName);
             }
         }
 
@@ -118,7 +128,7 @@ namespace CQ.Utility
         {
             if(value < max)
             {
-                throw new ArgumentException($"Parameter '{propName}' must be grater than {max}");
+                throw new ArgumentException($"Must be grater than {max}", propName);
             }
         }
 
@@ -133,7 +143,7 @@ namespace CQ.Utility
         {
             if (value.Length > length)
             {
-                throw new ArgumentException($"Parameter '{propName}' must have maximum {length} characters");
+                throw new ArgumentException($"Must have maximum {length} characters", propName);
             }
         }
 
@@ -148,7 +158,7 @@ namespace CQ.Utility
         {
             if(value > max)
             {
-                throw new ArgumentException($"Parameter '{propName}' must be less than {max}");
+                throw new ArgumentException($"Must be less than {max}", propName);
             }
         }
 
@@ -158,8 +168,12 @@ namespace CQ.Utility
         /// <param name="value"></param>
         /// <exception cref="NullReferenceException">If value is null</exception>
         /// <returns>String without the tags</returns>
-        public static string Encode(string value)
+        public static string? Encode(string? value)
         {
+            if (value == null) return null;
+
+            value = value.Trim();
+
             var withoutScript = value.Replace("<script>", string.Empty).Replace("</script>", string.Empty);
             var withoutJs = withoutScript.Replace("<>", string.Empty).Replace("</>", string.Empty);
             var withoutTags = withoutJs.Replace("<", string.Empty).Replace(">", string.Empty);
@@ -179,7 +193,7 @@ namespace CQ.Utility
             // Check if the email matches the pattern
             if (!Regex.IsMatch(email, emailPattern))
             {
-                throw new ArgumentException("Incorrect format of email");
+                throw new ArgumentException("Incorrect format", nameof(email));
             }
         }
 
@@ -208,7 +222,7 @@ namespace CQ.Utility
             string numberPattern = @"\d";
             if (!Regex.IsMatch(password, specialCharacterPattern) || !Regex.IsMatch(password, numberPattern))
             {
-                throw new ArgumentException("Password must have at least one number and special character");
+                throw new ArgumentException("Must have at least one number and special character", nameof(password));
             }
         }
 
