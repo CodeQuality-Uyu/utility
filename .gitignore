@@ -5,6 +5,7 @@
 .env.*
 # mstest test results
 TestResults
+packs/*
 
 .vscode
 
