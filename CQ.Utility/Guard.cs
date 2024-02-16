@@ -83,6 +83,22 @@ namespace CQ.Utility
         }
 
         /// <summary>
+        /// Checks if list is null or empty
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="propName"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static void ThrowIsListNullOrEmpty(List<object>? value, string propName)
+        {
+            ThrowIsNull(value, propName);
+
+            if (IsListNullOrEmpty(value))
+            {
+                throw new ArgumentNullException(propName, $"Value of parameter cannot be null or empty");
+            }
+        }
+
+        /// <summary>
         /// Checks if string is null or white space
         /// </summary>
         /// <param name="value"></param>
@@ -90,6 +106,16 @@ namespace CQ.Utility
         public static bool IsNullOrEmpty(string? value)
         {
             return string.IsNullOrWhiteSpace(value);
+        }
+
+        /// <summary>
+        /// Checks if list is null or empty
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static bool IsListNullOrEmpty(List<object>? value)
+        {
+            return value ==null || value.Count == 0;
         }
 
         /// <summary>
