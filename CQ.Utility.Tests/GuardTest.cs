@@ -62,5 +62,12 @@ namespace CQ.Utility.Tests
                 throw;
             }
         }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void ThrowIsNullOrEmpty_WhenObjectIsListEmpty_ShouldThrowException()
+        {
+            Guard.ThrowIsNullOrEmpty(new List<int>(), "prop");
+        }
     }
 }

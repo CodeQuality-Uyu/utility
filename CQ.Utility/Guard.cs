@@ -82,17 +82,10 @@ namespace CQ.Utility
             }
         }
 
-        /// <summary>
-        /// Checks if list is null or empty
-        /// </summary>
-        /// <param name="value"></param>
-        /// <param name="propName"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        public static void ThrowIsListNullOrEmpty(List<object>? value, string propName)
+        public static void ThrowIsNullOrEmpty<TValue>(List<TValue>? value, string propName)
         {
-            ThrowIsNull(value, propName);
 
-            if (IsListNullOrEmpty(value))
+            if (IsNullOrEmpty(value))
             {
                 throw new ArgumentNullException(propName, $"Value of parameter cannot be null or empty");
             }
@@ -105,17 +98,12 @@ namespace CQ.Utility
         /// <returns></returns>
         public static bool IsNullOrEmpty(string? value)
         {
-            return string.IsNullOrWhiteSpace(value);
+            return string.IsNullOrEmpty(value);
         }
 
-        /// <summary>
-        /// Checks if list is null or empty
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static bool IsListNullOrEmpty(List<object>? value)
+        public static bool IsNullOrEmpty<TValue>(List<TValue>? value)
         {
-            return value ==null || value.Count == 0;
+            return value == null || value.Count == 0;
         }
 
         /// <summary>
@@ -123,7 +111,7 @@ namespace CQ.Utility
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public static bool IsNotNullOrEmpty(string? value) 
+        public static bool IsNotNullOrEmpty(string? value)
         {
             return !string.IsNullOrWhiteSpace(value);
         }
@@ -152,7 +140,7 @@ namespace CQ.Utility
         /// <exception cref="ArgumentException"></exception>
         public static void ThrowIsLessThan(int value, int max, string propName)
         {
-            if(value < max)
+            if (value < max)
             {
                 throw new ArgumentException($"Must be grater than {max}", propName);
             }
@@ -182,7 +170,7 @@ namespace CQ.Utility
         /// <exception cref="ArgumentException"></exception>
         public static void ThrowIsMoreThan(int value, int max, string propName)
         {
-            if(value > max)
+            if (value > max)
             {
                 throw new ArgumentException($"Must be less than {max}", propName);
             }
