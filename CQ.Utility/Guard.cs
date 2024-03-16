@@ -182,9 +182,9 @@ namespace CQ.Utility
         /// <param name="value"></param>
         /// <exception cref="NullReferenceException">If value is null</exception>
         /// <returns>String without the tags</returns>
-        public static string? Encode(string? value)
+        public static string Encode(string? value)
         {
-            if (value == null) return null;
+            if (value == null) return string.Empty;
 
             value = value.Trim();
 
