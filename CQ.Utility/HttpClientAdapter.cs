@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using CQ.Utility.Exceptions;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -101,6 +102,25 @@ namespace CQ.Utility
             var requestAsync = new RequestAsync(request);
 
             return await ExecuteRequest<TSuccessBody, TErrorBody>(requestAsync, processError, headers).ConfigureAwait(false);
+        }
+
+        public virtual async Task PostAsync<TErrorBody>(
+            string uri,
+            object value,
+            Func<TErrorBody, Exception?>? processError = null,
+            List<Header>? headers = null)
+            where TErrorBody : class
+        {
+            var request = async () =>
+            {
+                var response = await _httpClient.PostAsJsonAsync(uri, value).ConfigureAwait(false);
+
+                return response;
+            };
+
+            var requestAsync = new RequestAsync(request);
+
+            await ExecuteRequest<TErrorBody>(requestAsync, processError, headers).ConfigureAwait(false);
         }
 
         /// <summary>

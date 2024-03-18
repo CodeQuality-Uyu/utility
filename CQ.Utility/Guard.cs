@@ -184,13 +184,27 @@ namespace CQ.Utility
         /// <returns>String without the tags</returns>
         public static string Encode(string? value)
         {
-            if (value == null) return string.Empty;
+            if (value == null)
+                return string.Empty;
 
             value = value.Trim();
 
             var withoutScript = value.Replace("<script>", string.Empty).Replace("</script>", string.Empty);
             var withoutJs = withoutScript.Replace("<>", string.Empty).Replace("</>", string.Empty);
             var withoutTags = withoutJs.Replace("<", string.Empty).Replace(">", string.Empty);
+
+            return withoutTags;
+        }
+
+        public static string Encode(string value, string prop)
+        {
+            value = value.Trim();
+
+            var withoutScript = value.Replace("<script>", string.Empty).Replace("</script>", string.Empty);
+            var withoutJs = withoutScript.Replace("<>", string.Empty).Replace("</>", string.Empty);
+            var withoutTags = withoutJs.Replace("<", string.Empty).Replace(">", string.Empty);
+
+            ThrowIsNullOrEmpty(value, prop);
 
             return withoutTags;
         }
