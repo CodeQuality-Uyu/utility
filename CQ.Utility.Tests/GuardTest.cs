@@ -69,5 +69,13 @@ namespace CQ.Utility.Tests
         {
             Guard.ThrowIsNullOrEmpty(new List<int>(), "prop");
         }
+
+        [TestMethod]
+        public void ThrowEmailInvalid()
+        {
+            var email = "user@gmail.com";
+
+            Guard.ThrowIsInputInvalidEmail(email);
+        }
     }
 }
