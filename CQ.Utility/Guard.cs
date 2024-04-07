@@ -131,6 +131,14 @@ namespace CQ.Utility
             }
         }
 
+        public static void ThrowIsLessThanOrEqual(double value, double max, string propName)
+        {
+            if (value <= max)
+            {
+                throw new ArgumentException($"Must be grater than {max}", propName);
+            }
+        }
+
         /// <summary>
         /// Checks if int is less than max
         /// </summary>
@@ -141,6 +149,14 @@ namespace CQ.Utility
         public static void ThrowIsLessThan(int value, int max, string propName)
         {
             if (value < max)
+            {
+                throw new ArgumentException($"Must be grater than {max} or equal", propName);
+            }
+        }
+
+        public static void ThrowIsLessThanOrEqual(int value, int max, string propName)
+        {
+            if (value <= max)
             {
                 throw new ArgumentException($"Must be grater than {max}", propName);
             }
@@ -171,6 +187,30 @@ namespace CQ.Utility
         public static void ThrowIsMoreThan(int value, int max, string propName)
         {
             if (value > max)
+            {
+                throw new ArgumentException($"Must be less than {max} or equal", propName);
+            }
+        }
+
+        public static void ThrowIsMoreThanOrEqual(int value, int max, string propName)
+        {
+            if (value >= max)
+            {
+                throw new ArgumentException($"Must be less than {max}", propName);
+            }
+        }
+
+        public static void ThrowIsMoreThan(double value, double max, string propName)
+        {
+            if (value > max)
+            {
+                throw new ArgumentException($"Must be less than {max} or equal", propName);
+            }
+        }
+
+        public static void ThrowIsMoreThanOrEqual(double value, double max, string propName)
+        {
+            if (value >= max)
             {
                 throw new ArgumentException($"Must be less than {max}", propName);
             }
