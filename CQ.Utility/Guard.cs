@@ -4,6 +4,20 @@ namespace CQ.Utility
 {
     public static class Guard
     {
+        #region Is
+        public static bool IsNot(string value, string expected)
+        {
+            return value != expected;
+        }
+
+        public static bool IsNot(string value, string[] expected)
+        {
+            var notFound = !expected.Contains(value);
+            
+            return notFound;
+        }
+
+
         /// <summary>
         /// Checks if value is null
         /// </summary>
@@ -115,7 +129,9 @@ namespace CQ.Utility
         {
             return !string.IsNullOrWhiteSpace(value);
         }
+        #endregion
 
+        #region LessThan
         /// <summary>
         /// Checks if string has minimum length
         /// </summary>
@@ -126,6 +142,14 @@ namespace CQ.Utility
         public static void ThrowIsLessThan(string value, int length, string propName)
         {
             if (value.Length < length)
+            {
+                throw new ArgumentException($"Must have minimum {length} characters", propName);
+            }
+        }
+
+        public static void ThrowIsLessThanOrEqual(string value, int length, string propName)
+        {
+            if (value.Length <= length)
             {
                 throw new ArgumentException($"Must have minimum {length} characters", propName);
             }
@@ -161,7 +185,9 @@ namespace CQ.Utility
                 throw new ArgumentException($"Must be grater than {max}", propName);
             }
         }
+        #endregion
 
+        #region MoreThan
         /// <summary>
         /// Checks if string has max length
         /// </summary>
@@ -172,6 +198,14 @@ namespace CQ.Utility
         public static void ThrowIsMoreThan(string value, int length, string propName)
         {
             if (value.Length > length)
+            {
+                throw new ArgumentException($"Must have maximum {length} characters", propName);
+            }
+        }
+
+        public static void ThrowIsMoreThanOrEqual(string value, int length, string propName)
+        {
+            if (value.Length >= length)
             {
                 throw new ArgumentException($"Must have maximum {length} characters", propName);
             }
@@ -215,6 +249,7 @@ namespace CQ.Utility
                 throw new ArgumentException($"Must be less than {max}", propName);
             }
         }
+        #endregion
 
         /// <summary>
         /// Replace '<script>, </script>', '<>, </>', '<, >' tags with empty string
@@ -249,6 +284,7 @@ namespace CQ.Utility
             return withoutTags;
         }
 
+        #region Email
         /// <summary>
         /// Checks the format of the email
         /// </summary>
@@ -278,7 +314,9 @@ namespace CQ.Utility
 
             ThrowIsInvalidEmailFormat(input);
         }
+        #endregion
 
+        #region Password
         /// <summary>
         /// Checks that the password has at least on special character and number
         /// </summary>
@@ -309,6 +347,7 @@ namespace CQ.Utility
 
             ThrowIsInvalidPasswordFormat(input);
         }
+        #endregion
 
         /// <summary>
         /// Checks if the input is not null or empty and if it's between the lengths allowed in cased their are provided
@@ -329,6 +368,17 @@ namespace CQ.Utility
             {
                 ThrowIsMoreThan(input, maxLength.Value, propName);
             }
+        }
+
+        public static string Normalize(string input)
+        {
+            if (input.Length == 0)
+                return input;
+
+            if (input.Length == 1)
+                return $"{char.ToUpper(input[0])}";
+
+            return $"{char.ToUpper(input[0])}{input[1..]}";
         }
     }
 }
