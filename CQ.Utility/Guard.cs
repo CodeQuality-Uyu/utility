@@ -260,7 +260,9 @@ namespace CQ.Utility
         public static string Encode(string? value)
         {
             if (value == null)
+            {
                 return string.Empty;
+            }
 
             value = value.Trim();
 
@@ -271,8 +273,10 @@ namespace CQ.Utility
             return withoutTags;
         }
 
-        public static string Encode(string value, string prop)
+        public static string Encode(string? value, string prop)
         {
+            value ??= string.Empty;
+
             value = value.Trim();
 
             var withoutScript = value.Replace("<script>", string.Empty).Replace("</script>", string.Empty);
@@ -373,10 +377,14 @@ namespace CQ.Utility
         public static string Normalize(string input)
         {
             if (input.Length == 0)
+            {
                 return input;
+            }
 
             if (input.Length == 1)
+            {
                 return $"{char.ToUpper(input[0])}";
+            }
 
             return $"{char.ToUpper(input[0])}{input[1..]}";
         }
