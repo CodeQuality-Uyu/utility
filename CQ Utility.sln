@@ -9,6 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQ.Utility.Tests", "CQ.Util
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{40D7E7F0-E072-42AF-B1D6-CBB1C50818E9}"
 	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
 		.github\workflows\pull-request.yml = .github\workflows\pull-request.yml
 		.github\workflows\tag.yml = .github\workflows\tag.yml
 	EndProjectSection

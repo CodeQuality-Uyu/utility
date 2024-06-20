@@ -4,9 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CQ.Utility
+namespace CQ.Utility;
+internal class CustomDateTime
 {
-    internal class CustomDateTime
-    {
-    }
 }

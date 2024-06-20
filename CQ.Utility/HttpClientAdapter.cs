@@ -4,602 +4,587 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace CQ.Utility
+namespace CQ.Utility;
+public class HttpClientAdapter
 {
-    public class HttpClientAdapter
+    private readonly HttpClient _httpClient;
+
+    public HttpClientAdapter()
     {
-        private readonly HttpClient _httpClient;
+        _httpClient = new();
+    }
 
-        private delegate Task<HttpResponseMessage> RequestAsync();
+    public HttpClientAdapter(
+        string baseUrl,
+        List<Header>? baseHeaders = null)
+    {
+        baseHeaders ??= [];
 
-        public HttpClientAdapter()
+        _httpClient = new()
         {
-            _httpClient = new();
-        }
+            BaseAddress = new Uri(baseUrl),
+        };
 
-        public HttpClientAdapter(string baseUrl, List<Header>? baseHeaders = null)
+        baseHeaders.ForEach(baseHeader =>
         {
-            baseHeaders ??= new List<Header>();
+            _httpClient.DefaultRequestHeaders.Add(baseHeader.Name, baseHeader.Value);
+        });
+    }
 
-            _httpClient = new()
-            {
-                BaseAddress = new Uri(baseUrl),
-            };
+    public HttpClientAdapter(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
 
-            baseHeaders.ForEach(baseHeader =>
-            {
-                _httpClient.DefaultRequestHeaders.Add(baseHeader.Name, baseHeader.Value);
-            });
-        }
-
-        public HttpClientAdapter(HttpClient httpClient)
+    public void AddDefaultHeaders(List<Header> headers)
+    {
+        headers.ForEach(header =>
         {
-            _httpClient = httpClient;
-        }
+            var existHeader = _httpClient.DefaultRequestHeaders.Contains(header.Name);
 
-        /// <summary>
-        /// Adds the header to the httpClient as default. Befor of adding them, they are removed.
-        /// </summary>
-        /// <param name="headers"></param>
-        public void AddDefaultHeaders(List<Header> headers)
-        {
-            headers.ForEach(header =>
-            {
-                var existHeader = _httpClient.DefaultRequestHeaders.Contains(header.Name);
-
-                if (existHeader)
-                    _httpClient.DefaultRequestHeaders.Remove(header.Name);
-
-                _httpClient.DefaultRequestHeaders.Add(header.Name, header.Value);
-            });
-        }
-
-        /// <summary>
-        /// Removes the header from the httpClient.
-        /// </summary>
-        /// <param name="headers"></param>
-        public void RemoveDefaultHeaders(List<Header> headers)
-        {
-            headers.ForEach(header =>
+            if (existHeader)
             {
                 _httpClient.DefaultRequestHeaders.Remove(header.Name);
-            });
-        }
+            }
 
-        #region Post
-        /// <summary>
-        /// Execute post request and parse success body to TSuccessBody and error body to TErrorBody.
-        /// </summary>
-        /// <typeparam name="TSuccessBody"></typeparam>
-        /// <typeparam name="TErrorBody"></typeparam>
-        /// <param name="uri"></param>
-        /// <param name="value"></param>
-        /// <param name="processError"></param>
-        /// <param name="headers"></param>
-        /// <returns></returns>
-        /// <exception cref="RequestException{TError}"></exception>
-        public virtual async Task<TSuccessBody> PostAsync<TSuccessBody, TErrorBody>(
-            string uri,
-            object value,
-            Func<TErrorBody, Exception?> processError,
-            List<Header>? headers = null)
-            where TSuccessBody : class
-            where TErrorBody : class
+            _httpClient.DefaultRequestHeaders.Add(header.Name, header.Value);
+        });
+    }
+
+    public void RemoveDefaultHeaders(List<Header> headers)
+    {
+        headers.ForEach(header =>
         {
-            async Task<HttpResponseMessage> PostRequestAsync()
+            _httpClient.DefaultRequestHeaders.Remove(header.Name);
+        });
+    }
+
+    #region Post
+    public virtual async Task<TSuccessBody> PostAsync<TSuccessBody, TErrorBody>(
+        string uri,
+        object value,
+        Func<TErrorBody, Exception?> processError,
+        List<Header>? headers = null)
+        where TSuccessBody : class
+        where TErrorBody : class
+    {
+        async Task<HttpResponseMessage> PostRequestAsync()
+        {
+            var response = await _httpClient.PostAsJsonAsync(uri, value).ConfigureAwait(false);
+
+            return response;
+        };
+
+        var successBody = await ExecuteRequest<TSuccessBody, TErrorBody>(PostRequestAsync, processError, headers).ConfigureAwait(false);
+
+        return successBody;
+    }
+
+    public virtual async Task<TSuccessBody> PostAsync<TSuccessBody, TErrorBody>(
+        string uri,
+        object value,
+        List<Header>? headers = null)
+        where TSuccessBody : class
+        where TErrorBody : class
+    {
+        var successBody = await PostAsync<TSuccessBody, TErrorBody>(uri, value, ProcessError<TErrorBody>, headers).ConfigureAwait(false);
+
+        return successBody;
+    }
+
+    public virtual async Task PostVoidAsync<TErrorBody>(
+        string uri,
+        object value,
+        Func<TErrorBody, Exception?> processError,
+        List<Header>? headers = null)
+        where TErrorBody : class
+    {
+        async Task<HttpResponseMessage> PostRequestAsync()
+        {
+            var response = await _httpClient.PostAsJsonAsync(uri, value).ConfigureAwait(false);
+
+            return response;
+        };
+
+        await ExecuteRequest<TErrorBody>(PostRequestAsync, processError, headers).ConfigureAwait(false);
+    }
+
+    public virtual async Task PostVoidAsync<TErrorBody>(
+        string uri,
+        object value,
+        List<Header>? headers = null)
+        where TErrorBody : class
+    {
+        await PostVoidAsync<TErrorBody>(uri, value, ProcessError<TErrorBody>, headers).ConfigureAwait(false);
+    }
+
+    public virtual async Task<TSuccessBody> PostAsync<TSuccessBody>(
+        string uri,
+        object value,
+        Func<object, Exception?> processError,
+        List<Header>? headers = null)
+        where TSuccessBody : class
+    {
+        var successBody = await PostAsync<TSuccessBody, object>(uri, value, processError, headers).ConfigureAwait(false);
+
+        return successBody;
+    }
+
+    public virtual async Task<TSuccessBody> PostAsync<TSuccessBody>(
+        string uri,
+        object value,
+        List<Header>? headers = null)
+        where TSuccessBody : class
+    {
+        var successBody = await PostAsync<TSuccessBody>(uri, value, ProcessError<object>, headers).ConfigureAwait(false);
+
+        return successBody;
+    }
+
+    public virtual async Task PostAsync(
+        string uri,
+        object value,
+        Func<object, Exception?> processError,
+        List<Header>? headers = null)
+    {
+        await PostVoidAsync<object>(uri, value, processError, headers).ConfigureAwait(false);
+    }
+
+    public virtual async Task PostAsync(
+        string uri,
+        object value,
+        List<Header>? headers = null)
+    {
+        await PostAsync(uri, value, ProcessError<object>, headers).ConfigureAwait(false);
+    }
+    #endregion
+
+    #region Get
+    /// <summary>
+    /// Execute get request and parse success body to TSuccessBody and error body to TErrorBody.
+    /// </summary>
+    /// <typeparam name="TSuccessBody"></typeparam>
+    /// <typeparam name="TErrorBody"></typeparam>
+    /// <param name="uri"></param>
+    /// <param name="processError"></param>
+    /// <param name="headers"></param>
+    /// <returns></returns>
+    public virtual async Task<TSuccessBody> GetAsync<TSuccessBody, TErrorBody>(
+        string uri,
+        Func<TErrorBody, Exception?> processError,
+        List<Header>? headers = null)
+        where TSuccessBody : class
+        where TErrorBody : class
+    {
+        async Task<HttpResponseMessage> GetAsync()
+        {
+            var response = await _httpClient.GetAsync(uri).ConfigureAwait(false);
+
+            return response;
+        };
+
+        var successBody = await ExecuteRequest<TSuccessBody, TErrorBody>(GetAsync, processError, headers).ConfigureAwait(false);
+
+        return successBody;
+    }
+
+    public virtual async Task<TSuccessBody> GetAsync<TSuccessBody, TErrorBody>(
+        string uri,
+        List<Header>? headers = null)
+        where TSuccessBody : class
+        where TErrorBody : class
+    {
+        var successBody = await GetAsync<TSuccessBody, TErrorBody>(uri, ProcessError<TErrorBody>, headers).ConfigureAwait(false);
+
+        return successBody;
+    }
+
+    public virtual async Task<TSuccessBody> GetAsync<TSuccessBody>(
+        string uri,
+        Func<object, Exception?> processError,
+        List<Header>? headers = null)
+        where TSuccessBody : class
+    {
+        var successBody = await GetAsync<TSuccessBody, object>(uri, processError, headers).ConfigureAwait(false);
+
+        return successBody;
+    }
+
+    public virtual async Task<TSuccessBody> GetAsync<TSuccessBody>(
+        string uri,
+        List<Header>? headers = null)
+        where TSuccessBody : class
+    {
+        var successBody = await GetAsync<TSuccessBody>(uri, ProcessError<object>, headers).ConfigureAwait(false);
+
+        return successBody;
+    }
+    #endregion
+
+    #region Delete
+    public virtual async Task<TSuccessBody> DeleteAsync<TSuccessBody, TErrorBody>(
+        string uri,
+        Func<TErrorBody, Exception?> processError,
+        List<Header>? headers = null)
+        where TSuccessBody : class
+        where TErrorBody : class
+    {
+        async Task<HttpResponseMessage> DeleteAsync()
+        {
+            var response = await _httpClient.DeleteAsync(uri).ConfigureAwait(false);
+
+            return response;
+        };
+
+        var successBody = await ExecuteRequest<TSuccessBody, TErrorBody>(DeleteAsync, processError, headers).ConfigureAwait(false);
+
+        return successBody;
+    }
+
+    public virtual async Task<TSuccessBody> DeleteAsync<TSuccessBody, TErrorBody>(
+        string uri,
+        List<Header>? headers = null)
+        where TSuccessBody : class
+        where TErrorBody : class
+    {
+        var successBody = await DeleteAsync<TSuccessBody, TErrorBody>(uri, ProcessError<TErrorBody>, headers).ConfigureAwait(false);
+
+        return successBody;
+    }
+
+    public virtual async Task DeleteVoidAsync<TErrorBody>(
+        string uri,
+        Func<TErrorBody, Exception?> processError,
+        List<Header>? headers = null)
+        where TErrorBody : class
+    {
+        async Task<HttpResponseMessage> DeleteAsync()
+        {
+            var response = await _httpClient.DeleteAsync(uri).ConfigureAwait(false);
+
+            return response;
+        };
+
+        await ExecuteRequest(DeleteAsync, processError, headers).ConfigureAwait(false);
+    }
+
+    public virtual async Task DeleteVoidAsync<TErrorBody>(
+        string uri,
+        List<Header>? headers = null)
+        where TErrorBody : class
+    {
+        await DeleteVoidAsync<TErrorBody>(uri, ProcessError<TErrorBody>, headers).ConfigureAwait(false);
+    }
+
+    public virtual async Task<TSuccessBody> DeleteAsync<TSuccessBody>(
+        string uri,
+        Func<object, Exception?> processError,
+        List<Header>? headers = null)
+        where TSuccessBody : class
+    {
+        var successBody = await DeleteAsync<TSuccessBody, object>(uri, processError, headers).ConfigureAwait(false);
+
+        return successBody;
+    }
+
+    public virtual async Task<TSuccessBody> DeleteAsync<TSuccessBody>(
+       string uri,
+       List<Header>? headers = null)
+       where TSuccessBody : class
+    {
+        var successBody = await DeleteAsync<TSuccessBody>(uri, ProcessError<object>, headers).ConfigureAwait(false);
+
+        return successBody;
+    }
+
+    public virtual async Task DeleteAsync(
+        string uri,
+        Func<object, Exception?> processError,
+        List<Header>? headers = null)
+    {
+        await DeleteVoidAsync<object>(uri, processError, headers).ConfigureAwait(false);
+    }
+
+    public virtual async Task DeleteAsync(
+        string uri,
+        List<Header>? headers = null)
+    {
+        await DeleteAsync(uri, ProcessError<object>, headers).ConfigureAwait(false);
+    }
+    #endregion
+
+    #region Update
+    public virtual async Task<TSuccessBody> UpdateAsync<TSuccessBody, TErrorBody>(
+        string uri,
+        object? value,
+        Func<TErrorBody, Exception?> processError,
+        List<Header>? headers = null)
+        where TSuccessBody : class
+        where TErrorBody : class
+    {
+        async Task<HttpResponseMessage> UpdateAsync()
+        {
+            StringContent? content = null;
+
+            if (value != null)
             {
-                var response = await _httpClient.PostAsJsonAsync(uri, value).ConfigureAwait(false);
+                var jsonContent = JsonConvert.SerializeObject(value);
 
-                return response;
-            };
+                content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            }
 
-            var successBody = await ExecuteRequest<TSuccessBody, TErrorBody>(PostRequestAsync, processError, headers).ConfigureAwait(false);
+            var response = await _httpClient.PutAsync(uri, null).ConfigureAwait(false);
 
-            return successBody;
-        }
+            return response;
+        };
 
-        public virtual async Task<TSuccessBody> PostAsync<TSuccessBody, TErrorBody>(
-            string uri,
-            object value,
-            List<Header>? headers = null)
-            where TSuccessBody : class
-            where TErrorBody : class
+        var successBody = await ExecuteRequest<TSuccessBody, TErrorBody>(UpdateAsync, processError, headers).ConfigureAwait(false);
+
+        return successBody;
+    }
+
+    public virtual async Task<TSuccessBody> UpdateAsync<TSuccessBody, TErrorBody>(
+        string uri,
+        object? value,
+        List<Header>? headers = null)
+        where TSuccessBody : class
+        where TErrorBody : class
+    {
+        var successBody = await UpdateAsync<TSuccessBody, TErrorBody>(uri, value, ProcessError<TErrorBody>, headers).ConfigureAwait(false);
+
+        return successBody;
+    }
+
+    public virtual async Task<TSuccessBody> UpdateAsync<TSuccessBody>(
+        string uri,
+        object? value,
+        Func<object, Exception?> processError,
+        List<Header>? headers = null)
+        where TSuccessBody : class
+    {
+        var successBody = await UpdateAsync<TSuccessBody, object>(uri, value, processError, headers).ConfigureAwait(false);
+
+        return successBody;
+    }
+
+    public virtual async Task<TSuccessBody> UpdateAsync<TSuccessBody>(
+        string uri,
+        object? value,
+        List<Header>? headers = null)
+        where TSuccessBody : class
+    {
+        var successBody = await UpdateAsync<TSuccessBody>(uri, value, ProcessError<object>, headers).ConfigureAwait(false);
+
+        return successBody;
+    }
+
+    public virtual async Task UpdateVoidAsync<TErrorBody>(
+        string uri,
+        object? value,
+        Func<TErrorBody, Exception?> processError,
+        List<Header>? headers = null)
+        where TErrorBody : class
+    {
+        async Task<HttpResponseMessage> UpdateAsync()
         {
-            var successBody = await PostAsync<TSuccessBody, TErrorBody>(uri, value, ProcessError<TErrorBody>, headers).ConfigureAwait(false);
+            StringContent? content = null;
 
-            return successBody;
-        }
-
-        public virtual async Task PostVoidAsync<TErrorBody>(
-            string uri,
-            object value,
-            Func<TErrorBody, Exception?> processError,
-            List<Header>? headers = null)
-            where TErrorBody : class
-        {
-            async Task<HttpResponseMessage> PostRequestAsync()
+            if (value != null)
             {
-                var response = await _httpClient.PostAsJsonAsync(uri, value).ConfigureAwait(false);
+                var jsonContent = JsonConvert.SerializeObject(value);
 
-                return response;
-            };
+                content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            }
 
-            await ExecuteRequest<TErrorBody>(PostRequestAsync, processError, headers).ConfigureAwait(false);
-        }
+            var response = await _httpClient.PutAsync(uri, null).ConfigureAwait(false);
 
-        public virtual async Task PostVoidAsync<TErrorBody>(
-            string uri,
-            object value,
-            List<Header>? headers = null)
-            where TErrorBody : class
+            return response;
+        };
+
+        await ExecuteRequest(UpdateAsync, processError, headers).ConfigureAwait(false);
+    }
+
+    public virtual async Task UpdateVoidAsync<TErrorBody>(
+        string uri,
+        object? value,
+        List<Header>? headers = null)
+        where TErrorBody : class
+    {
+        await UpdateVoidAsync<TErrorBody>(uri, value, ProcessError<TErrorBody>, headers).ConfigureAwait(false);
+    }
+
+    public virtual async Task UpdateAsync(
+        string uri,
+        object? value,
+        Func<object, Exception?> processError,
+        List<Header>? headers = null)
+    {
+        await UpdateVoidAsync<object>(uri, value, processError, headers).ConfigureAwait(false);
+    }
+
+
+    public virtual async Task UpdateAsync(
+        string uri,
+        object? value,
+        List<Header>? headers = null)
+    {
+        await UpdateAsync(uri, value, ProcessError<object>, headers).ConfigureAwait(false);
+    }
+    #endregion
+
+    private async Task<TSuccessBody> ExecuteRequest<TSuccessBody, TErrorBody>(
+        Func<Task<HttpResponseMessage>> RequestAsync,
+        Func<TErrorBody, Exception?> processError,
+        List<Header>? headers = null)
+        where TSuccessBody : class
+        where TErrorBody : class
+    {
+        try
         {
-            await PostVoidAsync<TErrorBody>(uri, value, ProcessError<TErrorBody>, headers).ConfigureAwait(false);
+            headers ??= [];
+
+            AddDefaultHeaders(headers);
+
+            var response = await RequestAsync().ConfigureAwait(false);
+
+            RemoveDefaultHeaders(headers);
+
+            return await ProcessResponseAsync<TSuccessBody, TErrorBody>(response, processError).ConfigureAwait(false);
         }
-
-        public virtual async Task<TSuccessBody> PostAsync<TSuccessBody>(
-            string uri,
-            object value,
-            Func<object, Exception?> processError,
-            List<Header>? headers = null)
-            where TSuccessBody : class
+        catch (HttpRequestException ex)
         {
-            var successBody = await PostAsync<TSuccessBody, object>(uri, value, processError, headers).ConfigureAwait(false);
-
-            return successBody;
-        }
-
-        public virtual async Task<TSuccessBody> PostAsync<TSuccessBody>(
-            string uri,
-            object value,
-            List<Header>? headers = null)
-            where TSuccessBody : class
-        {
-            var successBody = await PostAsync<TSuccessBody>(uri, value, ProcessError<object>, headers).ConfigureAwait(false);
-
-            return successBody;
-        }
-
-        public virtual async Task PostAsync(
-            string uri,
-            object value,
-            Func<object, Exception?> processError,
-            List<Header>? headers = null)
-        {
-            await PostVoidAsync<object>(uri, value, processError, headers).ConfigureAwait(false);
-        }
-
-        public virtual async Task PostAsync(
-            string uri,
-            object value,
-            List<Header>? headers = null)
-        {
-            await PostAsync(uri, value, ProcessError<object>, headers).ConfigureAwait(false);
-        }
-        #endregion
-
-        #region Get
-        /// <summary>
-        /// Execute get request and parse success body to TSuccessBody and error body to TErrorBody.
-        /// </summary>
-        /// <typeparam name="TSuccessBody"></typeparam>
-        /// <typeparam name="TErrorBody"></typeparam>
-        /// <param name="uri"></param>
-        /// <param name="processError"></param>
-        /// <param name="headers"></param>
-        /// <returns></returns>
-        public virtual async Task<TSuccessBody> GetAsync<TSuccessBody, TErrorBody>(
-            string uri,
-            Func<TErrorBody, Exception?> processError,
-            List<Header>? headers = null)
-            where TSuccessBody : class
-            where TErrorBody : class
-        {
-            async Task<HttpResponseMessage> GetAsync()
+            if (ex.Message.ToLower().StartsWith("no connection could be made"))
             {
-                var response = await _httpClient.GetAsync(uri).ConfigureAwait(false);
+                Match match = Regex.Match(ex.Message, @"\((.*?)\)");
 
-                return response;
-            };
-
-            var successBody = await ExecuteRequest<TSuccessBody, TErrorBody>(GetAsync, processError, headers).ConfigureAwait(false);
-
-            return successBody;
-        }
-
-        public virtual async Task<TSuccessBody> GetAsync<TSuccessBody, TErrorBody>(
-            string uri,
-            List<Header>? headers = null)
-            where TSuccessBody : class
-            where TErrorBody : class
-        {
-            var successBody = await GetAsync<TSuccessBody, TErrorBody>(uri, ProcessError<TErrorBody>, headers).ConfigureAwait(false);
-
-            return successBody;
-        }
-
-        public virtual async Task<TSuccessBody> GetAsync<TSuccessBody>(
-            string uri,
-            Func<object, Exception?> processError,
-            List<Header>? headers = null)
-            where TSuccessBody : class
-        {
-            var successBody = await GetAsync<TSuccessBody, object>(uri, processError, headers).ConfigureAwait(false);
-
-            return successBody;
-        }
-
-        public virtual async Task<TSuccessBody> GetAsync<TSuccessBody>(
-            string uri,
-            List<Header>? headers = null)
-            where TSuccessBody : class
-        {
-            var successBody = await GetAsync<TSuccessBody>(uri, ProcessError<object>, headers).ConfigureAwait(false);
-
-            return successBody;
-        }
-        #endregion
-
-        #region Delete
-        public virtual async Task<TSuccessBody> DeleteAsync<TSuccessBody, TErrorBody>(
-            string uri,
-            Func<TErrorBody, Exception?> processError,
-            List<Header>? headers = null)
-            where TSuccessBody : class
-            where TErrorBody : class
-        {
-            async Task<HttpResponseMessage> DeleteAsync()
-            {
-                var response = await _httpClient.DeleteAsync(uri).ConfigureAwait(false);
-
-                return response;
-            };
-
-            var successBody = await ExecuteRequest<TSuccessBody, TErrorBody>(DeleteAsync, processError, headers).ConfigureAwait(false);
-
-            return successBody;
-        }
-
-        public virtual async Task<TSuccessBody> DeleteAsync<TSuccessBody, TErrorBody>(
-            string uri,
-            List<Header>? headers = null)
-            where TSuccessBody : class
-            where TErrorBody : class
-        {
-            var successBody = await DeleteAsync<TSuccessBody, TErrorBody>(uri, ProcessError<TErrorBody>, headers).ConfigureAwait(false);
-
-            return successBody;
-        }
-
-        public virtual async Task DeleteVoidAsync<TErrorBody>(
-            string uri,
-            Func<TErrorBody, Exception?> processError,
-            List<Header>? headers = null)
-            where TErrorBody : class
-        {
-            async Task<HttpResponseMessage> DeleteAsync()
-            {
-                var response = await _httpClient.DeleteAsync(uri).ConfigureAwait(false);
-
-                return response;
-            };
-
-            await ExecuteRequest(DeleteAsync, processError, headers).ConfigureAwait(false);
-        }
-
-        public virtual async Task DeleteVoidAsync<TErrorBody>(
-            string uri,
-            List<Header>? headers = null)
-            where TErrorBody : class
-        {
-            await DeleteVoidAsync<TErrorBody>(uri, ProcessError<TErrorBody>, headers).ConfigureAwait(false);
-        }
-
-        public virtual async Task<TSuccessBody> DeleteAsync<TSuccessBody>(
-            string uri,
-            Func<object, Exception?> processError,
-            List<Header>? headers = null)
-            where TSuccessBody : class
-        {
-            var successBody = await DeleteAsync<TSuccessBody, object>(uri, processError, headers).ConfigureAwait(false);
-
-            return successBody;
-        }
-
-        public virtual async Task<TSuccessBody> DeleteAsync<TSuccessBody>(
-           string uri,
-           List<Header>? headers = null)
-           where TSuccessBody : class
-        {
-            var successBody = await DeleteAsync<TSuccessBody>(uri, ProcessError<object>, headers).ConfigureAwait(false);
-
-            return successBody;
-        }
-
-        public virtual async Task DeleteAsync(
-            string uri,
-            Func<object, Exception?> processError,
-            List<Header>? headers = null)
-        {
-            await DeleteVoidAsync<object>(uri, processError, headers).ConfigureAwait(false);
-        }
-
-        public virtual async Task DeleteAsync(
-            string uri,
-            List<Header>? headers = null)
-        {
-            await DeleteAsync(uri, ProcessError<object>, headers).ConfigureAwait(false);
-        }
-        #endregion
-
-        #region Update
-        public virtual async Task<TSuccessBody> UpdateAsync<TSuccessBody, TErrorBody>(
-            string uri,
-            object? value,
-            Func<TErrorBody, Exception?> processError,
-            List<Header>? headers = null)
-            where TSuccessBody : class
-            where TErrorBody : class
-        {
-            async Task<HttpResponseMessage> UpdateAsync()
-            {
-                StringContent? content = null;
-
-                if (value != null)
+                string connection;
+                if (match.Success)
                 {
-                    var jsonContent = JsonConvert.SerializeObject(value);
-
-                    content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+                    connection = match.Groups[1].Value;
+                }
+                else
+                {
+                    connection = "-";
                 }
 
-                var response = await _httpClient.PutAsync(uri, null).ConfigureAwait(false);
-
-                return response;
-            };
-
-            var successBody = await ExecuteRequest<TSuccessBody, TErrorBody>(UpdateAsync, processError, headers).ConfigureAwait(false);
-
-            return successBody;
+                throw new ConnectionRefusedException(connection);
+            }
+            throw;
         }
+    }
 
-        public virtual async Task<TSuccessBody> UpdateAsync<TSuccessBody, TErrorBody>(
-            string uri,
-            object? value,
-            List<Header>? headers = null)
-            where TSuccessBody : class
-            where TErrorBody : class
+    private async Task ExecuteRequest<TErrorBody>(
+        Func<Task<HttpResponseMessage>> RequestAsync,
+        Func<TErrorBody, Exception?> processError,
+        List<Header>? headers = null)
+        where TErrorBody : class
+    {
+        try
         {
-            var successBody = await UpdateAsync<TSuccessBody, TErrorBody>(uri, value, ProcessError<TErrorBody>, headers).ConfigureAwait(false);
+            headers ??= new List<Header>();
 
-            return successBody;
+            AddDefaultHeaders(headers);
+
+            var response = await RequestAsync().ConfigureAwait(false);
+
+            RemoveDefaultHeaders(headers);
+
+            await ProcessResponseAsync(response, processError).ConfigureAwait(false);
         }
-
-        public virtual async Task<TSuccessBody> UpdateAsync<TSuccessBody>(
-            string uri,
-            object? value,
-            Func<object, Exception?> processError,
-            List<Header>? headers = null)
-            where TSuccessBody : class
+        catch (HttpRequestException ex)
         {
-            var successBody = await UpdateAsync<TSuccessBody, object>(uri, value, processError, headers).ConfigureAwait(false);
-
-            return successBody;
-        }
-
-        public virtual async Task<TSuccessBody> UpdateAsync<TSuccessBody>(
-            string uri,
-            object? value,
-            List<Header>? headers = null)
-            where TSuccessBody : class
-        {
-            var successBody = await UpdateAsync<TSuccessBody>(uri, value, ProcessError<object>, headers).ConfigureAwait(false);
-
-            return successBody;
-        }
-
-        public virtual async Task UpdateVoidAsync<TErrorBody>(
-            string uri,
-            object? value,
-            Func<TErrorBody, Exception?> processError,
-            List<Header>? headers = null)
-            where TErrorBody : class
-        {
-            async Task<HttpResponseMessage> UpdateAsync()
+            if (ex.Message.ToLower().StartsWith("no connection could be made"))
             {
-                StringContent? content = null;
+                Match match = Regex.Match(ex.Message, @"\((.*?)\)");
 
-                if (value != null)
+                string connection;
+                if (match.Success)
                 {
-                    var jsonContent = JsonConvert.SerializeObject(value);
-
-                    content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+                    connection = match.Groups[1].Value;
+                }
+                else
+                {
+                    connection = "-";
                 }
 
-                var response = await _httpClient.PutAsync(uri, null).ConfigureAwait(false);
-
-                return response;
-            };
-
-            await ExecuteRequest(UpdateAsync, processError, headers).ConfigureAwait(false);
-        }
-
-        public virtual async Task UpdateVoidAsync<TErrorBody>(
-            string uri,
-            object? value,
-            List<Header>? headers = null)
-            where TErrorBody : class
-        {
-            await UpdateVoidAsync<TErrorBody>(uri, value, ProcessError<TErrorBody>, headers).ConfigureAwait(false);
-        }
-
-        public virtual async Task UpdateAsync(
-            string uri,
-            object? value,
-            Func<object, Exception?> processError,
-            List<Header>? headers = null)
-        {
-            await UpdateVoidAsync<object>(uri, value, processError, headers).ConfigureAwait(false);
-        }
-
-
-        public virtual async Task UpdateAsync(
-            string uri,
-            object? value,
-            List<Header>? headers = null)
-        {
-            await UpdateAsync(uri, value, ProcessError<object>, headers).ConfigureAwait(false);
-        }
-        #endregion
-
-        private async Task<TSuccessBody> ExecuteRequest<TSuccessBody, TErrorBody>(
-            RequestAsync RequestAsync,
-            Func<TErrorBody, Exception?> processError,
-            List<Header>? headers = null)
-            where TSuccessBody : class
-            where TErrorBody : class
-        {
-            try
-            {
-                headers ??= new List<Header>();
-
-                AddDefaultHeaders(headers);
-
-                var response = await RequestAsync().ConfigureAwait(false);
-
-                RemoveDefaultHeaders(headers);
-
-                return await ProcessResponseAsync<TSuccessBody, TErrorBody>(response, processError).ConfigureAwait(false);
+                throw new ConnectionRefusedException(connection);
             }
-            catch (HttpRequestException ex)
-            {
-                if (ex.Message.ToLower().StartsWith("no connection could be made"))
-                {
-                    Match match = Regex.Match(ex.Message, @"\((.*?)\)");
-
-                    string connection;
-                    if (match.Success)
-                    {
-                        connection = match.Groups[1].Value;
-                    }
-                    else
-                    {
-                        connection = "-";
-                    }
-
-                    throw new ConnectionRefusedException(connection);
-                }
-                throw;
-            }
+            throw;
         }
+    }
 
-        private async Task ExecuteRequest<TErrorBody>(
-            RequestAsync RequestAsync,
-            Func<TErrorBody, Exception?> processError,
-            List<Header>? headers = null)
-            where TErrorBody : class
+    private async Task<TSuccessBody> ProcessResponseAsync<TSuccessBody, TErrorBody>(
+        HttpResponseMessage response,
+        Func<TErrorBody, Exception?> processErrorResponse)
+        where TSuccessBody : class
+        where TErrorBody : class
+    {
+        await ProcessErrorAsync(response, processErrorResponse).ConfigureAwait(false);
+
+        var successBody = await ProcessBodyAsync<TSuccessBody>(response).ConfigureAwait(false);
+
+        return successBody;
+    }
+
+    private async Task ProcessResponseAsync<TErrorBody>(
+        HttpResponseMessage response,
+        Func<TErrorBody, Exception?> processErrorResponse)
+        where TErrorBody : class
+    {
+        await ProcessErrorAsync(response, processErrorResponse).ConfigureAwait(false);
+    }
+
+    private async Task ProcessErrorAsync<TErrorBody>(
+        HttpResponseMessage response,
+        Func<TErrorBody, Exception?> processErrorResponse)
+        where TErrorBody : class
+    {
+        if (response.IsSuccessStatusCode)
         {
-            try
-            {
-                headers ??= new List<Header>();
-
-                AddDefaultHeaders(headers);
-
-                var response = await RequestAsync().ConfigureAwait(false);
-
-                RemoveDefaultHeaders(headers);
-
-                await ProcessResponseAsync(response, processError).ConfigureAwait(false);
-            }
-            catch (HttpRequestException ex)
-            {
-                if (ex.Message.ToLower().StartsWith("no connection could be made"))
-                {
-                    Match match = Regex.Match(ex.Message, @"\((.*?)\)");
-
-                    string connection;
-                    if (match.Success)
-                    {
-                        connection = match.Groups[1].Value;
-                    }
-                    else
-                    {
-                        connection = "-";
-                    }
-
-                    throw new ConnectionRefusedException(connection);
-                }
-                throw;
-            }
+            return;
         }
 
-        private async Task<TSuccessBody> ProcessResponseAsync<TSuccessBody, TErrorBody>(
-            HttpResponseMessage response,
-            Func<TErrorBody, Exception?> processErrorResponse)
-            where TSuccessBody : class
-            where TErrorBody : class
+        var concreteErrorBody = await ProcessBodyAsync<TErrorBody>(response).ConfigureAwait(false);
+
+        if (concreteErrorBody == null)
         {
-            await ProcessErrorAsync(response, processErrorResponse).ConfigureAwait(false);
+            var errorBody = await ProcessBodyAsync<object>(response).ConfigureAwait(false);
 
-            var successBody = await this.ProcessBodyAsync<TSuccessBody>(response).ConfigureAwait(false);
-
-            return successBody;
+            throw new RequestException<object>(errorBody);
         }
 
-        private async Task ProcessResponseAsync<TErrorBody>(
-            HttpResponseMessage response,
-            Func<TErrorBody, Exception?> processErrorResponse)
-            where TErrorBody : class
+        var exception = processErrorResponse(concreteErrorBody);
+        exception ??= new RequestException<TErrorBody>(concreteErrorBody);
+
+        throw exception;
+    }
+
+    private async Task<TBody> ProcessBodyAsync<TBody>(HttpResponseMessage response)
+        where TBody : class
+    {
+        TBody? body;
+        try
         {
-            await ProcessErrorAsync(response, processErrorResponse).ConfigureAwait(false);
+            body = await response.Content.ReadFromJsonAsync<TBody>().ConfigureAwait(false);
         }
-
-        private async Task ProcessErrorAsync<TErrorBody>(
-            HttpResponseMessage response,
-            Func<TErrorBody, Exception?> processErrorResponse)
-            where TErrorBody : class
+        catch
         {
-            if (response.IsSuccessStatusCode)
-                return;
+            var responseAsString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-            var concreteErrorBody = await this.ProcessBodyAsync<TErrorBody>(response).ConfigureAwait(false);
-
-            if (concreteErrorBody == null)
-            {
-                var errorBody = await this.ProcessBodyAsync<object>(response).ConfigureAwait(false);
-
-                throw new RequestException<object>(errorBody);
-            }
-
-            var exception = processErrorResponse(concreteErrorBody);
-            exception ??= new RequestException<TErrorBody>(concreteErrorBody);
-
-            throw exception;
+            body = JsonConvert.DeserializeObject<TBody>(responseAsString);
         }
 
-        private async Task<TBody> ProcessBodyAsync<TBody>(HttpResponseMessage response)
-            where TBody : class
+        if (body == null)
         {
-            TBody? body;
-            try
-            {
-                body = await response.Content.ReadFromJsonAsync<TBody>().ConfigureAwait(false);
-            }
-            catch
-            {
-                var responseAsString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-                body = JsonConvert.DeserializeObject<TBody>(responseAsString);
-            }
-
-            if (body == null)
-                throw new BodyNullException();
-
-            return body;
+            throw new BodyNullException();
         }
 
-        protected Exception ProcessError<TErrorBody>(TErrorBody errorBody)
-            where TErrorBody : class
-        {
-            return new RequestException<TErrorBody>(errorBody);
-        }
+        return body;
+    }
+
+    protected Exception ProcessError<TErrorBody>(TErrorBody errorBody)
+        where TErrorBody : class
+    {
+        return new RequestException<TErrorBody>(errorBody);
     }
 }
