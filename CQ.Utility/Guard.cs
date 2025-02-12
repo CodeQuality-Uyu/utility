@@ -2,7 +2,7 @@
 
 namespace CQ.Utility
 {
-    public static class Guard
+    public static partial class Guard
     {
         #region LessThan
         public static void ThrowIsLessThan(string value, int length, string propName)

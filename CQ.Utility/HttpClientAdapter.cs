@@ -582,9 +582,7 @@ public class HttpClientAdapter
         return body;
     }
 
-    protected Exception ProcessError<TErrorBody>(TErrorBody errorBody)
+    private Exception? ProcessError<TErrorBody>(TErrorBody errorBody)
         where TErrorBody : class
-    {
-        return new RequestException<TErrorBody>(errorBody);
-    }
+        => new RequestException<TErrorBody>(errorBody);
 }

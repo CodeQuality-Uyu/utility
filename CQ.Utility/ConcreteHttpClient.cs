@@ -1,4 +1,5 @@
 ﻿namespace CQ.Utility;
+
 public class ConcreteHttpClient<TGenericError> : HttpClientAdapter
     where TGenericError : class
 {
@@ -6,7 +7,7 @@ public class ConcreteHttpClient<TGenericError> : HttpClientAdapter
     {
     }
 
-    public ConcreteHttpClient(HttpClient client) : base(client) 
+    public ConcreteHttpClient(HttpClient client) : base(client)
     {
     }
 
@@ -29,7 +30,7 @@ public class ConcreteHttpClient<TGenericError> : HttpClientAdapter
         List<Header>? headers = null)
         where TSuccessBody : class
     {
-        var response = await base.PostAsync<TSuccessBody>(uri, value, this.ProcessError, headers).ConfigureAwait(false);
+        var response = await base.PostAsync<TSuccessBody, TGenericError>(uri, value, ProcessConcreteError, headers).ConfigureAwait(false);
 
         return response;
     }
@@ -48,7 +49,7 @@ public class ConcreteHttpClient<TGenericError> : HttpClientAdapter
         object value,
         List<Header>? headers = null)
     {
-        await base.PostVoidAsync<TGenericError>(uri, value, ProcessError<TGenericError>, headers).ConfigureAwait(false);
+        await base.PostVoidAsync<TGenericError>(uri, value, ProcessConcreteError, headers).ConfigureAwait(false);
     }
     #endregion
 
@@ -69,7 +70,7 @@ public class ConcreteHttpClient<TGenericError> : HttpClientAdapter
         List<Header>? headers = null)
         where TSuccessBody : class
     {
-        var response = await base.GetAsync<TSuccessBody,TGenericError>(uri, ProcessError<TGenericError>, headers).ConfigureAwait(false);
+        var response = await base.GetAsync<TSuccessBody, TGenericError>(uri, ProcessConcreteError, headers).ConfigureAwait(false);
 
         return response;
     }
@@ -92,7 +93,7 @@ public class ConcreteHttpClient<TGenericError> : HttpClientAdapter
        List<Header>? headers = null)
        where TSuccessBody : class
     {
-        var response = await base.DeleteAsync<TSuccessBody>(uri, ProcessError, headers).ConfigureAwait(false);
+        var response = await base.DeleteAsync<TSuccessBody, TGenericError>(uri, ProcessConcreteError, headers).ConfigureAwait(false);
 
         return response;
     }
@@ -109,7 +110,7 @@ public class ConcreteHttpClient<TGenericError> : HttpClientAdapter
         string uri,
         List<Header>? headers = null)
     {
-        await base.DeleteAsync(uri, ProcessError, headers).ConfigureAwait(false);
+        await base.DeleteVoidAsync<TGenericError>(uri, ProcessConcreteError, headers).ConfigureAwait(false);
     }
     #endregion
 
@@ -132,7 +133,7 @@ public class ConcreteHttpClient<TGenericError> : HttpClientAdapter
         List<Header>? headers = null)
         where TSuccessBody : class
     {
-        var response = await this.UpdateAsync<TSuccessBody>(uri, value, ProcessError<TGenericError>, headers).ConfigureAwait(false);
+        var response = await this.UpdateAsync<TSuccessBody>(uri, value, ProcessConcreteError, headers).ConfigureAwait(false);
 
         return response;
     }
@@ -151,7 +152,9 @@ public class ConcreteHttpClient<TGenericError> : HttpClientAdapter
         object? value,
         List<Header>? headers = null)
     {
-        await base.UpdateVoidAsync<TGenericError>(uri, value, ProcessError<TGenericError>, headers).ConfigureAwait(false);
+        await base.UpdateVoidAsync<TGenericError>(uri, value, ProcessConcreteError, headers).ConfigureAwait(false);
     }
     #endregion
+
+    protected virtual Exception? ProcessConcreteError(TGenericError error) => null;
 }
