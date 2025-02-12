@@ -451,11 +451,11 @@ public class HttpClientAdapter
 
             return await ProcessResponseAsync<TSuccessBody, TErrorBody>(response, processError).ConfigureAwait(false);
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex)
         {
             if (ex.Message.ToLower().StartsWith("no connection could be made"))
             {
-                Match match = Regex.Match(ex.Message, @"\((.*?)\)");
+                var match = Regex.Match(ex.Message, @"\((.*?)\)");
 
                 string connection;
                 if (match.Success)

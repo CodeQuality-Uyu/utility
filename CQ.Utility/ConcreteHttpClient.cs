@@ -29,7 +29,7 @@ public class ConcreteHttpClient<TGenericError> : HttpClientAdapter
         List<Header>? headers = null)
         where TSuccessBody : class
     {
-        var response = await base.PostAsync<TSuccessBody>(uri, value, ProcessError, headers).ConfigureAwait(false);
+        var response = await base.PostAsync<TSuccessBody>(uri, value, this.ProcessError, headers).ConfigureAwait(false);
 
         return response;
     }
@@ -48,7 +48,7 @@ public class ConcreteHttpClient<TGenericError> : HttpClientAdapter
         object value,
         List<Header>? headers = null)
     {
-        await base.PostVoidAsync<TGenericError>(uri, value, this.ProcessError, headers).ConfigureAwait(false);
+        await base.PostVoidAsync<TGenericError>(uri, value, ProcessError<TGenericError>, headers).ConfigureAwait(false);
     }
     #endregion
 
@@ -69,7 +69,7 @@ public class ConcreteHttpClient<TGenericError> : HttpClientAdapter
         List<Header>? headers = null)
         where TSuccessBody : class
     {
-        var response = await base.GetAsync<TSuccessBody>(uri, ProcessError, headers).ConfigureAwait(false);
+        var response = await base.GetAsync<TSuccessBody,TGenericError>(uri, ProcessError<TGenericError>, headers).ConfigureAwait(false);
 
         return response;
     }
@@ -132,7 +132,7 @@ public class ConcreteHttpClient<TGenericError> : HttpClientAdapter
         List<Header>? headers = null)
         where TSuccessBody : class
     {
-        var response = await this.UpdateAsync<TSuccessBody>(uri, value, ProcessError, headers).ConfigureAwait(false);
+        var response = await this.UpdateAsync<TSuccessBody>(uri, value, ProcessError<TGenericError>, headers).ConfigureAwait(false);
 
         return response;
     }
@@ -151,12 +151,7 @@ public class ConcreteHttpClient<TGenericError> : HttpClientAdapter
         object? value,
         List<Header>? headers = null)
     {
-        await base.UpdateVoidAsync<TGenericError>(uri, value, ProcessError, headers).ConfigureAwait(false);
+        await base.UpdateVoidAsync<TGenericError>(uri, value, ProcessError<TGenericError>, headers).ConfigureAwait(false);
     }
     #endregion
-
-    protected virtual Exception? ProcessError(TGenericError error)
-    {
-        return base.ProcessError<TGenericError>(error);
-    }
 }
