@@ -68,7 +68,7 @@ public static partial class Guard
         return value == null;
     }
 
-    public static bool IsNotNull(object? value)
+    public static bool IsNotNull([NotNullWhen(true)]object? value)
     {
         return value != null;
     }
@@ -100,7 +100,7 @@ public static partial class Guard
         return value == null || value.Count == 0;
     }
 
-    public static bool IsNotNullOrEmpty(string? value)
+    public static bool IsNotNullOrEmpty([NotNullWhen(true)]string? value)
     {
         return !string.IsNullOrWhiteSpace(value);
     }
