@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace CQ.Utility;
 
 public static partial class Guard
