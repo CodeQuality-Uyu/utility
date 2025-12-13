@@ -1,0 +1,54 @@
+name: Publish NuGet Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versión del paquete (ej: 1.2.3)"
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    env:
+      PROJECT_NAME: CQ.Utility
+      PACKAGE_VERSION: ${{ github.event.inputs.version }}
+      NUGET_SOURCE: ${{ github.event.inputs.nuget_source }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Calculate project path
+        id: paths
+        run: |
+          PROJECT_PATH="$PROJECT_NAME/$PROJECT_NAME.csproj"
+          echo "PROJECT_PATH=$PROJECT_PATH" >> $GITHUB_ENV
+          echo "Using project path: $PROJECT_PATH"
+
+      - name: Restore
+        run: dotnet restore "$PROJECT_PATH"
+
+      - name: Build
+        run: dotnet build "$PROJECT_PATH" -c Release --no-restore
+
+      - name: Pack
+        run: |
+          dotnet pack "$PROJECT_PATH" \
+            -c Release \
+            --no-build \
+            -p:PackageVersion="$PACKAGE_VERSION" \
+            -o ./artifacts
+
+      - name: Publish to NuGet
+        run: |
+          dotnet nuget push "./artifacts/*.nupkg" \
+            --api-key "${{ secrets.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
